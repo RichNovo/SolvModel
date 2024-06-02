@@ -1,3 +1,9 @@
+try:
+    #from tblite.interface import Calculator
+    from tblite.ase import TBLite as TBLite
+except:
+    from xtb.ase import XTB as TBLite
+
 import copy
 import sys
 
@@ -17,8 +23,8 @@ from atom_model.policy import SpecialPartialRotDiagGaussianDistribution
 #from xtb.ase.calculator import XTB
 #from xtb.libxtb import VERBOSITY_MINIMAL, VERBOSITY_MUTED
 #from xtb.interface import Calculator, Param
-from tblite.interface import Calculator
-from tblite.ase import TBLite
+
+
 
 import math
 import os
@@ -47,22 +53,6 @@ from ase.geometry.analysis import Analysis
 
 mol_id_offset = 50
 
-ohc_mix_labels = ["Propargyl alcohol",
-                  "Ethanol",
-                  "Penta-2,4-diynoic acid",
-                  "2-Furanol",
-                  "3-Furanol",
-                  "Methyl propiolate",
-                  "Buta-2,3-dienoic acid",
-                  "2-one-3-ynebutanol",
-                  "4-hydroxy-2-ynebutanal",
-                  "2-hydroxy-3-ynebutanal",
-                  "Cyclopropanol",
-                  "Allyl alcohol",
-                  "Penta-1,4-diyn-3-ol",
-                  "2,4-pentadiyn-1-ol",
-                  "phenol"
-                  ]
 
 def abstract_mapping_to_node(nodes, nodes_xyz, rot, node_map):
     ret_nodes = []
@@ -77,216 +67,6 @@ def abstract_mapping_to_node(nodes, nodes_xyz, rot, node_map):
             ret_nodes.append(nodes[i])
             ret_nodes_xyz.append(nodes_xyz[i])
     return np.array(ret_nodes), np.array(ret_nodes_xyz)
-
-def calculate_hist(nodes,nodes_xyz,fix_mask,rot,node_map):
-    a_list = []
-
-    nodes_real, nodes_xyz_real = abstract_mapping_to_node(nodes, nodes_xyz, rot, node_map)
-    q = 12
-    opt_path = f"./minima_hopping/200_iter/test_10_water_{str(q)}/result/minima.traj"
-
-    opt_trajreader = []
-    if os.path.exists(opt_path):
-        opt_trajreader = Trajectory(opt_path,'r')
-
-    own_path = f"./good_results/final_solv/final_v1/results/test_lp_10/example_{str(q)}_new2.traj"
-    own_trajreader = []
-    if os.path.exists(opt_path):
-        own_trajreader = Trajectory(own_path,'r')
-
-    a = 20.0  # lattice constant in Angstrom
-
-    cell = [[a, 0, 0],
-            [0, a, 0],
-            [0, 0, a]]
-    
-    """
-    ncols = 3
-    fig, axs = plt.subplots(nrows=15//ncols, ncols=ncols,figsize=(4*15//ncols, 4*ncols), dpi=200)
-    for q in range(0,15):
-        opt_path = f"./minima_hopping/200_iter/test_10_water_{str(q)}/result/minima.traj"
-        orig_atoms_list = []
-        for i in range(1000):
-            other_path = f"./renders/rdf_test_renders/optimized_2/example_{str(q)}_{str(i)}.traj"
-            if os.path.exists(other_path) is False:
-                break
-            traj = Trajectory(other_path,'r')[-2]
-            orig_atoms_list.append(traj)
-        opt_trajreader = []
-        if os.path.exists(opt_path):
-            opt_trajreader = Trajectory(opt_path,'r')
-
-        #plt.clf()
-
-        res = 100
-        dist = 10.
-        from_ = 11
-        res = []
-        for j in range(0,len(opt_trajreader)):
-            res.append(opt_trajreader[j].get_potential_energy())
-        res=np.array(res)[np.max(res)>res]
-        offset = np.min(res)
-        opt_min = np.argmin(res)
-        axs[q // ncols,q%ncols].hist(res-offset,30,None,True,alpha=0.8)
-
-        res=[]
-        for j in range(0,len(orig_atoms_list)):
-            res.append(orig_atoms_list[j].get_potential_energy())
-        
-        if len(np.argwhere(res<offset)) > 0:
-            print(f"mol index: {q} traj_index: {np.argwhere(res<offset).flatten()} vs. trajindex: {opt_min}")
-        #tmp = 5*np.std(res)
-        #res=np.array(res)[np.logical_and((np.median(res)-tmp)<res,(np.median(res)+tmp)>res)]
-        res = np.array(res)[(offset-3)<res]
-        res = res[(offset+4)>res]
-        axs[q // ncols,q%ncols].hist(res-offset,30,None,True,alpha=0.8)
-        axs[q // ncols,q%ncols].set_title(ohc_mix_labels[q],fontsize=6)
-        axs[q // ncols,q%ncols].tick_params(axis='both', which='both', labelsize=6)
-        if q>11:
-            axs[q // ncols,q%ncols].set_facecolor('0.8')
-    plt.subplots_adjust(left=0.1, right=0.9, top=0.9, bottom=0.1, wspace=0.1, hspace=0.4)
-    plt.savefig(f'./rdf_images/minima_hopping/img_hist.png')
-    """
-    
-    return
-    
-
-
-def calculate_rdf(nodes,nodes_xyz,fix_mask,rot,node_map):
-    
-    a_list = []
-
-    nodes_real, nodes_xyz_real = abstract_mapping_to_node(nodes, nodes_xyz, rot, node_map)
-    q = 12
-    opt_path = f"./minima_hopping/200_iter/test_10_water_{str(q)}/result/minima.traj"
-
-    opt_trajreader = []
-    if os.path.exists(opt_path):
-        opt_trajreader = Trajectory(opt_path,'r')
-
-    own_path = f"./good_results/final_solv/final_v1/results/test_lp_10/example_{str(q)}_new2.traj"
-    own_trajreader = []
-    if os.path.exists(opt_path):
-        own_trajreader = Trajectory(own_path,'r')
-
-    a = 20.0  # lattice constant in Angstrom
-
-    cell = [[a, 0, 0],
-            [0, a, 0],
-            [0, 0, a]]
-
-    #plt.plot(Analysis(atoms).get_rdf(10.,100,elements = [1,8])[0])
-    ana = Analysis(Atoms(opt_trajreader[-1].numbers,opt_trajreader[-1].positions,cell=cell,pbc=[False, False, False]))
-    #plt.plot(Analysis(atoms_o).get_rdf(10.,100,elements = [1,8])[0])
-
-    """
-    best = False
-    ncols = 3
-    fig, axs = plt.subplots(nrows=15//ncols, ncols=ncols,figsize=(4*15//ncols, 4*ncols), dpi=200)
-    for q in range(0,15):
-        opt_path = f"./minima_hopping/200_iter/test_10_water_{str(q)}/result/minima.traj"
-        orig_atoms_list = []
-        for i in range(1000):
-            other_path = f"./renders/rdf_test_renders/optimized_2/example_{str(q)}_{str(i)}.traj"
-            if os.path.exists(other_path) is False:
-                break
-            traj = Trajectory(other_path,'r')[-1]
-            orig_atoms_list.append(traj)
-        opt_trajreader = []
-        if os.path.exists(opt_path):
-            opt_trajreader = Trajectory(opt_path,'r')
-
-        if best is True:
-            tmp = []
-            for j in range(0,len(opt_trajreader)):
-                tmp.append(opt_trajreader[j].get_potential_energy())
-            argmin_opt=np.argmin(tmp)
-            opt_trajreader = [opt_trajreader[argmin_opt]]
-            tmp = []
-            for j in range(0,len(orig_atoms_list)):
-                tmp.append(orig_atoms_list[j].get_potential_energy())
-            argmin_own=np.argmin(tmp)
-            orig_atoms_list = [orig_atoms_list[argmin_own]]
-            print(f"mol_index: {q} argmin_opt: {argmin_opt}, argmin_own: {argmin_own} energy_opt: {opt_trajreader[0].get_potential_energy()} energy_own: {orig_atoms_list[0].get_potential_energy()} better: {orig_atoms_list[0].get_potential_energy()<opt_trajreader[0].get_potential_energy()}")
-
-
-        #plt.clf()
-        res = 100
-        dist = 10.
-        from_ = 11
-        sum = np.zeros(res)
-        for j in range(0,len(opt_trajreader)):
-            sum += Analysis(Atoms(opt_trajreader[j].numbers,opt_trajreader[j].positions,cell=cell,pbc=[False, False, False])).get_rdf(dist,res,elements = [1,8])[0]
-        sum = sum/len(opt_trajreader)
-
-        axs[q // ncols,q%ncols].plot([x/dist for x in range(0,res) ][from_:],sum[from_:])
-
-        for j in range(0,len(orig_atoms_list)):
-            sum += Analysis(ase.Atoms(orig_atoms_list[j].numbers,orig_atoms_list[j].positions,cell=cell,pbc=[False, False, False])).get_rdf(dist,res,elements = [1,8])[0]
-        sum = sum/len(orig_atoms_list)
-        axs[q // ncols,q%ncols].plot([x/dist for x in range(0,res) ][from_:],sum[from_:])
-        axs[q // ncols,q%ncols].set_title(ohc_mix_labels[q],fontsize=6)
-        axs[q // ncols,q%ncols].tick_params(axis='both', which='both', labelsize=6)
-        if q>11:
-            axs[q // ncols,q%ncols].set_facecolor('0.8')
-        
-        #plt.savefig(f'./rdf_images/minima_hopping/img_{q}.png')
-    plt.subplots_adjust(left=0.1, right=0.9, top=0.9, bottom=0.1, wspace=0.1, hspace=0.3)
-    plt.savefig(f'./rdf_images/minima_hopping/img_rdf.png')
-    """
-
-    ana.get_rdf(4.,100,elements = [1,8])
-
-def minima_hopping_fun(nodes,nodes_xyz,fix_mask,rot,node_map,dir = "./minima_hopping/"):
-    nodes_real, nodes_xyz_real = abstract_mapping_to_node(nodes, nodes_xyz, rot, node_map)
-    a_list = []
-    for i in range(len(nodes_real)):
-        a_list.append(ase.Atom(nodes_real[i] + 1, nodes_xyz_real[i]))
-    atoms = ase.Atoms(a_list)
-
-    constraints = [FixAtoms(indices=np.argwhere(fix_mask==0.).squeeze(axis=-1)),]
-
-    index = 0
-    for i in range(len(nodes)):
-        if nodes[i] in node_map:
-            connected_indices = []
-            for elem in node_map[nodes[i]]:
-                connected_indices.append(index)
-                index +=1
-
-            comb = itertools.combinations(connected_indices, 2)
-            for comb_index in comb:
-                constraints.append(Hookean(a1=comb_index[0], a2=comb_index[1],
-                                        rt=np.linalg.norm(nodes_xyz_real[comb_index[0]]-nodes_xyz_real[comb_index[1]], axis=-1),
-                                        k=15.))
-        else:
-            index +=1
-    atoms.set_constraint(constraints)
-
-    # Set the calculator.
-    #calc = EMT()
-    #calc = TBLite(method = "GFN2-xTB")
-    calc = TBLite(None, 20, method = "GFN2-xTB")
-    #calc.set(verbosity = 0)
-    calc.set(max_iterations = 100)
-    calc.set(accuracy = 1.0)
-    atoms.calc = calc
-
-    # Instantiate and run the minima hopping algorithm.
-    if os.path.exists(os.path.join(dir,'result/')) == False:
-        os.makedirs(os.path.join(dir,'result/'))
-    if os.path.exists(os.path.join(dir,'calc/')) == False:
-        os.makedirs(os.path.join(dir,'calc/'))
-
-    hop = MinimaHopping(atoms,
-                        Ediff0=2.5,
-                        T0=4000.,
-                        minima_traj = os.path.join(dir,'result/',"minima.traj"),
-                        logfile =  os.path.join(dir,'result/','hop.log'),
-                        md_and_qn_path = os.path.join(dir,"calc/"))
-    hop(totalsteps=10)
-
-    print("Done")
 
 def fibonacci_latice(number_of_points, radius = 1):
 
@@ -467,8 +247,6 @@ class AtomMovingEnvTest(gym.Env):
                     ]), \
                   }
 
-
-        self.t_scale = self.pos_step_scale
            
         if mol_setup == "C6H6":
             def init_fun():
@@ -521,14 +299,9 @@ class AtomMovingEnvTest(gym.Env):
 
                 #self.max_step_per_ep = 100
                 self.reward_skip = 0
-                self.t_scale = self.pos_step_scale
             if additional_seed is None:
                 self.resetter = init_fun
             init_fun()
-
-        elif mol_setup == "mixed":
-            #molecules = ["CH4", "H2CO","HCOOH","HCCl3","C2H2","CO","CO2","LiF","CN","H3CNH2", "NH3", "NO", "NO2"]
-            pass
 
         elif mol_setup == "CH4":
             def init_fun():
@@ -538,9 +311,6 @@ class AtomMovingEnvTest(gym.Env):
                     mol_rng = np.random.default_rng(additional_seed)
 
                 self.initial_state = {'nodes':np.array([5,0,0,0,0]) }
-
-                #water_positions = np.array([[]])
-
 
                 def gen_positions(num):
                     nodes_xyz_list_tmp = []
@@ -591,7 +361,6 @@ class AtomMovingEnvTest(gym.Env):
 
                 #self.max_step_per_ep = 100
                 self.reward_skip = 0
-                self.t_scale = self.pos_step_scale
             if additional_seed is None:
                 self.resetter = init_fun
             init_fun()
@@ -605,7 +374,7 @@ class AtomMovingEnvTest(gym.Env):
                     mol_rng = np.random.default_rng(additional_seed)
 
 
-                traj_path = os.path.join(os.getcwd(),"renders", "oh_molecules.traj")
+                traj_path = os.path.join(os.getcwd(),"data", "oh_molecules.traj")
                 trajreader = Trajectory(traj_path,'r')
 
                 mol_index = mol_rng.integers(0,len(trajreader)-3)
@@ -685,21 +454,13 @@ class AtomMovingEnvTest(gym.Env):
                         shell+=1
                     return np.concatenate(nodes_xyz_list_tmp)
 
-                self.initial_state['nodes_xyz'] = np.concatenate( (solve_nodes_xyz, gen_positions(water_num) ) )
-
-                if 'fix_rot_mask' not in self.initial_state:
-                    self.initial_state['fix_rot_mask'] = np.ones([self.initial_state['nodes'].shape[0],9])
-                    self.initial_state['fix_mask'] = np.ones(self.initial_state['nodes'].shape)
-                self.initial_state['fix_mask'][0:len(solve_nodes_xyz)] = 0.
-
-                if 'rot' not in self.initial_state:
-                    self.initial_state['rot'] =  R.from_euler("xyz",np.zeros_like(self.initial_state['nodes_xyz'])).as_matrix()
-
                 running = 0
                 limit = 100
                 while running < limit and self.initial_energy is None:
                     
                     self.initial_state['nodes_xyz'] = np.concatenate( (solve_nodes_xyz, gen_positions(water_num) ) )
+                    if 'rot' not in self.initial_state:
+                        self.initial_state['rot'] =  R.from_euler("xyz",np.zeros_like(self.initial_state['nodes_xyz'])).as_matrix()
 
                     nodes, nodes_xyz = abstract_mapping_to_node(self.initial_state['nodes'], self.initial_state['nodes_xyz'], self.initial_state['rot'], self.node_map)
                     self.initial_energy = xtb_total_energy_difference(nodes + 1, nodes_xyz ,0.0 ,float('NaN'), self.solvation)
@@ -713,15 +474,19 @@ class AtomMovingEnvTest(gym.Env):
                     #self.initial_energy = 0.
                     print("energy calculation failed at init")
                     raise Exception("energy calculation failed at init")
+                
+                if 'fix_rot_mask' not in self.initial_state:
+                    self.initial_state['fix_rot_mask'] = np.ones([self.initial_state['nodes'].shape[0],9])
+                self.initial_state['fix_rot_mask'][0:len(solve_nodes_xyz),0:9] = 0.
 
-
-                self.optimal_energy = xtb_total_energy_difference(self.optimal_state['nodes'] + 1, self.optimal_state['nodes_xyz'] ,0.0 ,float('NaN'), self.solvation)
-                if math.isnan(self.optimal_energy):
-                    raise Exception("optimal energy is nan")
+                if self.optimal_state is not None:
+                    self.optimal_energy = xtb_total_energy_difference(self.optimal_state['nodes'] + 1, self.optimal_state['nodes_xyz'] ,0.0 ,float('NaN'), self.solvation)
+                    if math.isnan(self.optimal_energy):
+                        raise Exception("optimal energy is nan")
 
                 #self.max_step_per_ep = 100
                 self.reward_skip = 0
-                self.t_scale = self.pos_step_scale
+
             if additional_seed is None:
                 self.resetter = init_fun
             init_fun()
@@ -844,7 +609,7 @@ class AtomMovingEnvTest(gym.Env):
                 nodes_xyz_tmp=self.current_state['nodes_xyz'] + pos_action * np.expand_dims(self.initial_state['fix_rot_mask'][:,0],-1)
             rot_vec_a = action[:,3:6]
             rot_vec_b = action[:,6:9]
-            new_rot = th.stack([rot_vec_a,rot_vec_b,rot_vec_a.cross(rot_vec_b)], dim = -1) 
+            new_rot = th.stack([rot_vec_a,rot_vec_b,rot_vec_a.cross(rot_vec_b, dim = -1)], dim = -1) 
             if self.low_pass_filter == 0. or self.step_num < 1:
                 rot_tmp = new_rot
             else:
@@ -924,14 +689,6 @@ class AtomMovingEnvTest(gym.Env):
         if seed is not None:
             self.observation_space.seed(seed)
 
-        if 'fix_rot_mask' not in self.initial_state:
-            rot_mask = np.zeros(len(self.initial_state['nodes']))
-            for i in range(rot_mask.shape[0]):
-                if self.initial_state['nodes'][i] in self.node_map:
-                    rot_mask[i] = 1.
-            self.initial_state['fix_rot_mask'] = np.concatenate([np.expand_dims(self.initial_state['fix_mask'],-1).repeat(3,-1), np.expand_dims(rot_mask,-1).repeat(6,-1)],  axis = 1)
-       
-
         self.step_num = 0
         self.reward_sum = 0.
         self.failed_step_sum = 0
@@ -945,41 +702,6 @@ class AtomMovingEnvTest(gym.Env):
         limit = 100
         running = 0
         self.current_state = copy.deepcopy(self.initial_state)
-
-        if self.random_init_state is True:
-            self.initial_energy = None
-
-
-        while running < limit and self.initial_energy is None:
-            #self.current_state = self.observation_space.sample()
-            #self.current_state['nodes'] = np.zeros_like(self.current_state['nodes'])
-            #self.current_state['nodes_xyz'] = self.current_state['nodes_xyz'] / 50.
-
-            if self.random_init_state is True:
-                self.current_state['nodes_xyz'] = np.expand_dims(self.initial_state['fix_mask'],-1) * (self.rng.random(list(self.current_state['nodes'].shape)+[3]) - 0.5) * self.rand_box_size
-                self.current_state['nodes_xyz'] = self.current_state['nodes_xyz'] + np.expand_dims(1. - self.initial_state['fix_mask'],-1) * self.initial_state['nodes_xyz']
-                self.current_state['rot'] = R.from_euler("xyz", ((self.rng.random(self.current_state['nodes_xyz'].shape))*2.*np.pi)).as_matrix() * np.expand_dims(np.expand_dims(self.initial_state['fix_mask'],-1), -1)
-                self.current_state['rot'] = self.current_state['rot'] + R.from_euler("xyz", self.initial_state['nodes_xyz']).as_matrix() * np.expand_dims(np.expand_dims(1. - self.initial_state['fix_mask'],-1),-1)
-                
-                def number_pairing(elem):
-                    tmp = {'0':0,'1':5}
-                    if str(elem) in tmp:
-                        return tmp[str(elem)]
-                    else:
-                        return elem
-
-                #self.current_state['nodes'] = np.array(list(map(number_pairing,self.rng.integers(low = 0,high = 2, size = self.current_state['nodes'].shape))))
-
-
-            nodes, nodes_xyz = abstract_mapping_to_node(self.current_state['nodes'], self.current_state['nodes_xyz'], self.current_state['rot'], self.node_map)
-            self.initial_energy = xtb_total_energy_difference(nodes + 1, nodes_xyz ,0.0 ,float('NaN'), self.solvation)
-
-            if math.isnan(self.initial_energy) == False:
-                running = limit
-            else:
-                running = running + 1
-                self.initial_energy = None
-        
 
         self.last_valid_energy = self.initial_energy
         self.current_state['state_energy'] = self.initial_energy
@@ -1004,28 +726,6 @@ class AtomMovingEnvTest(gym.Env):
         else:
             return {"nodes": nodes, 'nodes_xyz': nodes_xyz}, {}
     
-    def save_to_xyz(self, nodes= None, nodes_xyz = None, out_folder_path= "renders"):
-        if (nodes is None) or (nodes_xyz is None):
-            nodes=self.nodes
-            nodes_xyz=self.nodes_xyz
-        out_coord_list=[]
-        #folder_full_path =os.path.dirname(os.path.realpath(__file__)) + "/" + out_folder_path
-        folder_full_path = os.path.join(os.getcwd(),out_folder_path)
-        #if os.path.exists(folder_full_path) == False:
-        #    os.makedirs(folder_full_path)
-
-        for i in range(len(self.nodes)):
-            atoms=nodes
-            coords=nodes_xyz
-            tmp_str = str(int(len(atoms))) + "\ntest\n"
-            for j in range(len(atoms)):
-                tmp_str+=str(int(atoms[j]+1)) + ' ' + "{:10.6f}".format(float(coords[j][0])) + ' ' + "{:10.6f}".format(float(coords[j][1])) + ' ' +  "{:10.6f}".format(float(coords[j][2])) + "\n"
-            out_coord_list.append(tmp_str)
-            file_path = os.path.join(folder_full_path, "out_" + str(i) + ".xyz")
-            f = open(file_path,'w')
-            f.write(tmp_str)
-            f.close()
-
     def record_state(self):
 
         nodes, nodes_xyz = abstract_mapping_to_node(self.current_state['nodes'], self.current_state['nodes_xyz'], self.current_state['rot'], self.node_map)
@@ -1039,15 +739,6 @@ class AtomMovingEnvTest(gym.Env):
                 norm_reward = -1
             
             if self.write_data_to_file:
-                ret = {
-                    "nodes":nodes.tolist(),
-                    "coords":np.array(self.coords_at_step).tolist()
-                }
-                file_path = os.path.join(os.getcwd(),"renders", "out_last.json")
-                f = open(file_path,'w')
-                f.write(json.dumps(ret))
-                f.close()
-
                 #ase_atoms = ase.Atoms([ase.Atom('N', (0, 0, 0)), ase.Atom('N', (0, 0, d))])
                 min_ene_coords_index = -1
                 min_energy = float('inf')
@@ -1076,15 +767,15 @@ class AtomMovingEnvTest(gym.Env):
                     traj.write(ase.Atoms(a_list),energy = self.energy_at_step[min_ene_coords_index])
                     
                     try:
-                        if True:
-                            ret_model_best = self.optimize(nodes, self.coords_at_step[min_ene_coords_index], self.current_state['fix_mask'])
+                        if False:
+                            ret_model_best = self.optimize(nodes, self.coords_at_step[min_ene_coords_index], self.initial_state['fix_rot_mask'][:,0])
                             optimized_energy = xtb_total_energy_difference(ret_model_best.numbers, ret_model_best.positions ,0.0 ,float('NaN'), self.solvation)
-                            ret = self.optimize(self.optimal_state['nodes'],  self.optimal_state['nodes_xyz'], self.current_state['fix_mask'])
+                            ret = self.optimize(self.optimal_state['nodes'],  self.optimal_state['nodes_xyz'], self.initial_state['fix_rot_mask'][:,0])
                             optimized_optimal_energy = xtb_total_energy_difference(ret.numbers, ret.positions ,0.0 ,float('NaN'), self.solvation)
                             
 
                             nodes_init, nodes_xyz_init = abstract_mapping_to_node(self.initial_state['nodes'], self.initial_state['nodes_xyz'], self.initial_state['rot'], self.node_map)
-                            initial_ret = self.optimize(nodes_init,  nodes_xyz_init, self.initial_state['fix_mask'])
+                            initial_ret = self.optimize(nodes_init,  nodes_xyz_init, self.initial_state['fix_rot_mask'][:,0])
                             initial_optimized_energy = xtb_total_energy_difference(initial_ret.numbers, initial_ret.positions ,0.0 ,float('NaN'), self.solvation)
                             print(f"Optimized Initial energy: {initial_optimized_energy}, Optimized Initial normalized: {(self.initial_energy - initial_optimized_energy)/(self.initial_energy - self.optimal_energy)}")
 
@@ -1099,31 +790,8 @@ class AtomMovingEnvTest(gym.Env):
 
                 traj.close()
 
-            elif norm_reward > 0.995:
-                ret = {
-                    "nodes":nodes.tolist(),
-                    "coords":np.array(self.coords_at_step).tolist()
-                }
-                file_path = os.path.join(os.getcwd(),"renders", "really_good_out.json")
-                f = open(file_path,'w')
-                f.write(json.dumps(ret))
-                f.close()
-            elif norm_reward > 0.95:
-                ret = {
-                    "nodes":nodes.tolist(),
-                    "coords":np.array(self.coords_at_step).tolist()
-                }
-                file_path = os.path.join(os.getcwd(),"renders", "good_out.json")
-                f = open(file_path,'w')
-                f.write(json.dumps(ret))
-                f.close()
-
 
     def optimize(self,nodes,nodes_xyz,fix_mask):
-        #nodes_real, nodes_xyz_real = abstract_mapping_to_node(nodes, nodes_xyz, rot, node_map)
-        #a_list = []
-        #for i in range(len(nodes)):
-        #    a_list.append(ase.Atom(nodes[i] + 1, nodes_xyz[i]))
         atoms = ase.Atoms(numbers = nodes+1, positions = nodes_xyz)
         
         constraints = [FixAtoms(indices=np.argwhere(fix_mask==0.).squeeze(axis=-1)),]
@@ -1173,7 +841,5 @@ class AtomMovingEnvTest(gym.Env):
     
     def get_min_energy(self):
         return self.min_energy
-    
-    def set_model_version(self,version):
-        self.model_version = version
+
 

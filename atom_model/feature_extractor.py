@@ -115,12 +115,19 @@ class EquiFeatureExtractor(BaseFeaturesExtractor):
         
         if (nodes_vector>10e+10).any():
             raise Exception("nodes_vector values are too large")
-
-        #nodes_vector = self.sum_vector_out(nodes_vector).squeeze(-1)
-        nodes_vector = nodes_vector[:,:,:,0]*nodes_scalar[:,:,0].unsqueeze(-1)
-
+        
         if (nodes_scalar>10e+10).any():
             raise Exception("nodes_scalar values are too large")
+
+        if True:
+            nodes_vector = self.sum_vector_out(nodes_vector).squeeze(-1)
+        else:
+            nodes_vector = nodes_vector[:,:,:,0]*nodes_scalar[:,:,0].unsqueeze(-1)
+
+        if False:
+            nodes_vector = th.nn.functional.normalize(nodes_vector, dim = -1) * self.sigmoid_out(th.norm(nodes_vector, dim = -1).unsqueeze(-1))
+
+
         
 
 
@@ -128,18 +135,16 @@ class EquiFeatureExtractor(BaseFeaturesExtractor):
 
             rot_part, rot_vec_part = self.painn_model_rot.my_forward(observations["nodes"].int(), observations["nodes_xyz"], observations["timestep"])
 
-            
-            #rot_vec_part = self.sum_rot_vec(rot_vec_part).squeeze(-1)
-            #rot_vec_part = rot_vec_part.permute(*range(rot_vec_part.dim()-2),-1,-2) # Use permute, the output of linear has dimension [1, 30, 3, 2] but we need [1, 30, 2, 3]
-            
-            ###rot_vec_part = th.nn.functional.normalize(rot_vec_part, dim = -1)
+            if True:
+                rot_vec_part = self.sum_rot_vec(rot_vec_part).squeeze(-1)
+                rot_vec_part = rot_vec_part.permute(*range(rot_vec_part.dim()-2),-1,-2) # Use permute, the output of linear has dimension [1, 30, 3, 2] but we need [1, 30, 2, 3]
+                
+                ###rot_vec_part = th.nn.functional.normalize(rot_vec_part, dim = -1)
 
-            #rot_vec_part = rot_vec_part# * observations["rot_mask"].unsqueeze(-1).unsqueeze(-1).repeat([1,1,2,3])
-            #rot_vec_part = th.flatten(rot_vec_part, start_dim=-2)
-
-            rot_vec_part = th.cat([rot_vec_part[:,:,:,0]*rot_part[:,:,0].unsqueeze(-1),rot_vec_part[:,:,:,1]*rot_part[:,:,1].unsqueeze(-1)], dim =-1)
-
-            
+                rot_vec_part = rot_vec_part# * observations["rot_mask"].unsqueeze(-1).unsqueeze(-1).repeat([1,1,2,3])
+                rot_vec_part = th.flatten(rot_vec_part, start_dim=-2)
+            else:
+                rot_vec_part = th.cat([rot_vec_part[:,:,:,0]*rot_part[:,:,0].unsqueeze(-1),rot_vec_part[:,:,:,1]*rot_part[:,:,1].unsqueeze(-1)], dim =-1)
 
 
         #nodes_scalar = self.sum_scalar_out(nodes_scalar).squeeze(-1)

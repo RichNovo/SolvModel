@@ -59,8 +59,8 @@ class SpecialPartialRotDiagGaussianDistribution(DiagGaussianDistribution):
 
         rot_vec_a = th.nn.functional.normalize(action[:,:,3:6],dim = -1 )
         rot_vec_b = th.nn.functional.normalize(action[:,:,6:9], dim = -1)
-        rot_vec_c = th.nn.functional.normalize(rot_vec_a.cross(rot_vec_b), dim = -1)
-        rot_vec_b = th.nn.functional.normalize(rot_vec_c.cross(rot_vec_a), dim = -1)
+        rot_vec_c = th.nn.functional.normalize(rot_vec_a.cross(rot_vec_b, dim = -1), dim = -1)
+        rot_vec_b = th.nn.functional.normalize(rot_vec_c.cross(rot_vec_a, dim = -1), dim = -1)
 
         norm = th.linalg.norm(action[:,:,0:3], dim = -1)
         new_norm = th.max(norm, th.tensor(1.))
@@ -73,27 +73,7 @@ class SpecialPartialRotDiagGaussianDistribution(DiagGaussianDistribution):
 
     def mat_action_to_rot(self, action):
         reshaped = action.reshape([action.shape[0]]+list(self.action_space.shape))
-        """
-        rot_vec_a = th.nn.functional.normalize(reshaped[:,:,3:6],dim = -1 )
-        rot_vec_b = th.nn.functional.normalize(reshaped[:,:,6:9], dim = -1)
-        rot_vec_c = th.nn.functional.normalize(rot_vec_a.cross(rot_vec_b), dim = -1)
-        rot_vec_b = th.nn.functional.normalize(rot_vec_c.cross(rot_vec_a), dim = -1)
 
-        #norm = th.linalg.norm(reshaped[:,:,0:3], dim = -1)
-        #new_norm = th.min(norm, 1.0)
-        #new_translation = new_norm.unsqueeze(-1)*th.nn.functional.normalize(reshaped[:,:,0:3], dim = -1)
-        ###
-        norm = th.linalg.norm(reshaped[:,:,0:3], dim = -1)
-        if norm.shape != SpecialPartialRotDiagGaussianDistribution.norm_ones_cache.shape:
-           SpecialPartialRotDiagGaussianDistribution.norm_ones_cache = th.ones_like(norm, device = norm.device)
-        new_norm = th.max(norm, SpecialPartialRotDiagGaussianDistribution.norm_ones_cache)
-        new_translation = reshaped[:,:,0:3]/new_norm.unsqueeze(-1)
-        #new_translation = reshaped[:,:,0:3]
-
-
-        mean_actions = th.cat([new_translation,rot_vec_a,rot_vec_b],dim=-1)
-
-        """
         mean_actions = SpecialPartialRotDiagGaussianDistribution.action_normalizer(reshaped).reshape(action.shape)
         return mean_actions
     

@@ -1,3 +1,6 @@
 __pycache__/
 .vscode/
-tb_log/
+tb_log/*
+minima_hopping/
+renders/
+saved_models/*

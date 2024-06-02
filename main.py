@@ -1,7 +1,9 @@
+from tblite.ase import TBLite as TBLite
 import argparse
 import os
 from stable_baselines3 import PPO
-from atom_model.env import AtomMovingEnvTest, calculate_hist
+from atom_model.env import AtomMovingEnvTest
+from atom_model.misc import calculate_hist
 from atom_model.policy import EquiActorCriticPolicy
 from atom_model.feature_extractor import EquiFeatureExtractor
 import time
@@ -46,7 +48,7 @@ class OwnCallback(BaseCallback):
 
 
 
-model_save_path = "./saved_models/pretrained_model"
+model_save_path = "./saved_models/"
 N_ENVS = 10
 def main():
     parser = argparse.ArgumentParser(description='Atom moving model')
@@ -117,7 +119,7 @@ def main():
     if os.path.exists(model_save_path) is False:
         os.makedirs(model_save_path)
 
-    tensorboard_log = "./tb_log/test"
+    tensorboard_log = "./tb_log/"
 
     feature_extractor_file_name = "c"#"feature_extractor_model_128_formic_acid_sigmoid_2.ply"
 
